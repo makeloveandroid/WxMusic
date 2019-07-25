@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <item
+        android:id="@+id/wx_icon"
+        android:orderInCategory="100"
+        android:icon="@mipmap/wx_icon"
+        app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/ali_icon"
+        android:orderInCategory="100"
+        android:icon="@mipmap/zhi_icon"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/mian_ze"
+        android:orderInCategory="100"
+        android:title="素材来源"
+        android:icon="@mipmap/icon_guanyu"
+        app:showAsAction="never"/>
+</menu>

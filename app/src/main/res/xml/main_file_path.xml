@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!--<external-path-->
+        <!--name="renrenche_files"-->
+        <!--path="renrenche" />-->
+
+
+    <files-path
+        name="files"
+        path="/" /><!--name必须为files--><!--path如果写非/的字符文件名，则权限访问权限精确到具体文件名下-->
+    <cache-path
+        name="cache"
+        path="/" /><!--name非空即可,但是不能为.和/,建议写为cache--><!--path如果写非/的字符文件名，则权限访问权限精确到具体文件名下-->
+    <external-path
+        name="."
+        path="/" /><!--name非空即可,但是不能为/--><!--path如果写非/的字符文件名，则权限访问权限精确到具体文件名下,写为/则是全部可访问-->
+    <external-files-path
+        name="/"
+        path="/" /><!--name非空即可--><!--path对访问权限无影响，可填可不填-->
+    <external-cache-path
+        name="/"
+        path="/" /><!--name非空即可--><!--path对访问权限无影响，可填可不填-->
+
+</paths>

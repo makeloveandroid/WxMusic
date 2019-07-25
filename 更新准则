@@ -1,0 +1,19 @@
+1:首先在jarObject中更新
+        // 获取自己的wxid
+        intent.putExtra("MY_WXID", q.SO()); 更新这个q类
+        intent.putExtra("NICK_NAME", q.SQ());
+规则:
+get userinfo fail 寻找类
+
+1:方法寻找规则
+    public static String SO() {
+        g.MI();
+        return (String) g.MH().Mr().get(2, null);
+    }
+2:方法寻找
+    public static String SQ() {
+        g.MI();
+        return (String) g.MH().Mr().get(4, null);
+    }
+
+### 2更新jni,记得不要同时编译2个so不然会出问题

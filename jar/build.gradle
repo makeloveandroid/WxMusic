@@ -1,0 +1,470 @@
+apply plugin: 'com.android.library'
+import com.android.build.gradle.AppPlugin
+import proguard.gradle.ProGuardTask
+
+import java.nio.ByteBuffer
+import java.security.MessageDigest
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+
+task buildJar(dependsOn: ['build'], type: Jar) {
+    archiveName = "mm.jar"
+    def srcClassDir = project.buildDir.absolutePath + "/intermediates/classes/release"
+    from srcClassDir
+    exclude "android*"
+    exclude "com/nine/remotemm/JarInterface.class"
+    exclude "com/nine/remotemm/BuildConfig.class"
+    exclude "com/nine/remotemm/R.class"
+    exclude "com/tencent/mm/R\$*"
+    exclude "com/tencent/mm/R.class"
+    exclude "com/nine/remotemm/R\$*"
+}
+
+def isWindows() {
+    return System.properties['os.name'].toString().toLowerCase().contains('windows');
+}
+
+//混淆字符串 jar的
+task hideStrJar(dependsOn: ['buildJar'], type: Exec) {
+    def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mm.jar"
+    def srcOutPath = projectDir.absolutePath + "${File.separator}libs${File.separator}HideStrJar.jar"
+    def srcEncryptionJarPath = projectDir.absolutePath + "${File.separator}bin${File.separator}obfuseJarString.jar"
+    //java -Dfile.encoding=utf-8 -jar obfuseJarString.jar
+
+    if (isWindows()) {
+        def cmd = "java -Dfile.encoding=utf-8 -jar " + srcEncryptionJarPath + " " + dexPath
+        println "--------------------------" + cmd
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def cmd = ["java", "-Dfile.encoding=utf-8", "-jar", srcEncryptionJarPath, dexPath]
+        println "--------------------------" + cmd
+        commandLine cmd
+    }
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+//混淆Task
+task proguardJar(dependsOn: ['hideStrJar'], type: ProGuardTask) {
+    //Android 默认的 proguard 文件
+    configuration 'proguard-android.txt'
+    //会根据该文件对 Jar 进行混淆，注意：需要在 manifest 注册的组件也要加入该文件中
+    configuration 'proguard-rules.pro'
+
+    def srcJarDir = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mmhStrJar.jar"
+    def srcProguardJarDir = project.buildDir.absolutePath + "${File.separator}libs${File.separator}hmm.jar"
+    String inJar = srcJarDir
+    //输入 jar
+    injars inJar
+    //输出 jar
+    outjars srcProguardJarDir
+
+    //设置不删除未引用的资源(类，方法等)
+    dontshrink
+
+    AppPlugin appPlugin = getPlugins().findPlugin(AppPlugin)
+    if (appPlugin != null) {
+        List<String> runtimeJarList
+        if (appPlugin.getMetaClass().getMetaMethod("getRuntimeJarList")) {
+            runtimeJarList = appPlugin.getRuntimeJarList()
+        } else if (android.getMetaClass().getMetaMethod("getBootClasspath")) {
+            runtimeJarList = android.getBootClasspath()
+        } else {
+            runtimeJarList = appPlugin.getBootClasspath()
+        }
+        for (String runtimeJar : runtimeJarList) {
+            //给 proguard 添加 runtime
+            libraryjars(runtimeJar)
+        }
+    }
+}
+
+task makeTestDex(dependsOn: ['proguardJar'], type: Exec) {
+    def jarPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mm.jar"
+    def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}testMM.dex"
+
+    if (isWindows()) {
+        def dxPath = android.getSdkDirectory().getAbsolutePath() + "${File.separator}build-tools${File.separator}22.0.1${File.separator}dx.bat"
+        def cmd = dxPath + " --dex --output=" + dexPath + " " + jarPath
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def dxPath = android.getSdkDirectory().getAbsolutePath() + "${File.separator}build-tools${File.separator}22.0.1${File.separator}dx"
+        def cmd = [dxPath, "--dex", "--output=" + dexPath, jarPath]
+        commandLine cmd
+    }
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+task makeDex(dependsOn: ['makeTestDex'], type: Exec) {
+    def jarPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}hmm.jar"
+    def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mm.dex"
+    if (isWindows()) {
+        def dxPath = android.getSdkDirectory().getAbsolutePath() + "${File.separator}build-tools${File.separator}22.0.1${File.separator}dx.bat"
+        def cmd = dxPath + " --dex --output=" + dexPath + " " + jarPath
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def dxPath = android.getSdkDirectory().getAbsolutePath() + "${File.separator}build-tools${File.separator}22.0.1${File.separator}dx"
+        def cmd = [dxPath, "--dex", "--output=" + dexPath, jarPath]
+        commandLine cmd
+    }
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+
+task encryptionTestDexJar(dependsOn: ['makeDex'], type: Exec) {
+    def key = "RESUL_ADD_PASS"
+    def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}testMM.dex"
+    def srcOutPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}调试.xml"
+    def srcEncryptionJarPath = projectDir.absolutePath + "${File.separator}bin${File.separator}encryption.jar"
+    if (isWindows()) {
+        def cmd = "java -jar " + srcEncryptionJarPath + " " + key + " " + dexPath + " " + srcOutPath
+        println(cmd)
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def cmd = ["java", "-jar", srcEncryptionJarPath, key, dexPath, srcOutPath]
+        println(cmd)
+        commandLine cmd
+    }
+
+
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+//加密sdk.jar方法
+task encryptionDexJar(dependsOn: ['encryptionTestDexJar'], type: Exec) {
+    def key = "RESUL_ADD_PASS"
+    def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mm.dex"
+    def srcOutPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mm.xml"
+    def srcEncryptionJarPath = projectDir.absolutePath + "${File.separator}bin${File.separator}encryption.jar"
+    if (isWindows()) {
+        def cmd = "java -jar " + srcEncryptionJarPath + " " + key + " " + dexPath + " " + srcOutPath
+        println(cmd)
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def cmd = ["java", "-jar", srcEncryptionJarPath, key, dexPath, srcOutPath]
+        println(cmd)
+        commandLine cmd
+    }
+
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+String getFileMD5(String path) {
+    String md5 = null;
+    try {
+        // 获取生成工具
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        File file = new File(path);
+        // 对每个字节数据组生成特征
+        if (file.exists()) {
+            // 汇总成最后一个值
+            FileInputStream input = new FileInputStream(file);
+
+            byte[] buffer = new byte[1024 * 10];
+            int len = 0;
+            while ((len = input.read(buffer)) != -1) {
+                md.update(buffer, 0, len);
+            }
+            byte[] bytes = md.digest();// 16
+            // 1byte =8bit
+            // 128bit
+            // 32固定长定
+            StringBuffer sb = new StringBuffer();
+            for (byte item : bytes) {
+                // 去掉高位
+                String hex = Integer.toHexString(item & 0xff);
+                if (hex.length() == 2) {
+                    sb.append(hex);
+                } else
+                // 补0
+                {
+                    sb.append('0').append(hex);
+
+                }
+            }
+            md5 = sb.toString();
+            input.close();
+        }
+    } catch (Exception e) {
+        L.e(e);
+    }
+    return md5;
+}
+// 制作dex完成加入混合+so机制
+task addSo(dependsOn: ['encryptionDexJar']) {
+    doLast {
+        // so路径
+        def soPath = projectDir.absolutePath + "${File.separator}bin${File.separator}libvoiccore.so"
+        println("第一个md5:" + getFileMD5(soPath))
+        def soFile = new File(soPath)
+        // so数据
+        def soBytes = soFile.readBytes()
+        // so长度+字节
+        def res = soBytes.size()
+        byte[] targets = new byte[4]
+        targets[0] = (byte) (res & 0xff);// 最低位
+        targets[1] = (byte) ((res >> 8) & 0xff);// 次低位
+        targets[2] = (byte) ((res >> 16) & 0xff);// 次高位
+        targets[3] = (byte) (res >>> 24);// 最高位,无符号右移。
+
+        // 语音调用路径
+        def voicePath = projectDir.absolutePath + "${File.separator}bin${File.separator}libvoice.so"
+        println("第二个md5:" + getFileMD5(voicePath))
+        def voiceFile = new File(voicePath)
+        // so数据
+        def voiceBytes = voiceFile.readBytes()
+        // so长度+字节
+        def voiceLength = voiceBytes.size()
+        byte[] voiceLengthBytes = new byte[4]
+        voiceLengthBytes[0] = (byte) (voiceLength & 0xff);// 最低位
+        voiceLengthBytes[1] = (byte) ((voiceLength >> 8) & 0xff);// 次低位
+        voiceLengthBytes[2] = (byte) ((voiceLength >> 16) & 0xff);// 次高位
+        voiceLengthBytes[3] = (byte) (voiceLength >>> 24);// 最高位,无符号右移。
+
+
+        def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}调试.xml"
+        def testDexfile = new File(dexPath)
+        if (testDexfile.exists()) {
+            def outStream = new ByteArrayOutputStream();
+            // 调试包追加so
+            outStream.write(targets)
+            outStream.write(soBytes)
+
+            // 追加voice2
+            outStream.write(voiceLengthBytes)
+            outStream.write(voiceBytes)
+
+
+            outStream.write(testDexfile.readBytes())
+
+
+            String newDexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}newTestMM.xml"
+            File file = new File(newDexPath)
+            file.createNewFile()
+            def stream = file.newOutputStream()
+            stream.write(outStream.toByteArray())
+            outStream.reset()
+            stream.close()
+
+            println("调试版的md5:" + getFileMD5(newDexPath))
+
+        }
+
+        def mmDexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}mm.xml"
+        def mmDexfile = new File(mmDexPath)
+        if (mmDexfile.exists()) {
+            def outStream = new ByteArrayOutputStream();
+            outStream.write(targets)
+            outStream.write(soBytes)
+
+            // 追加voice2
+            outStream.write(voiceLengthBytes)
+            outStream.write(voiceBytes)
+
+            outStream.write(mmDexfile.readBytes())
+
+            String newMmDex = project.buildDir.absolutePath + "${File.separator}libs${File.separator}newMM.xml"
+            File file = new File(newMmDex)
+            def stream1 = file.newOutputStream()
+            stream1.write(outStream.toByteArray())
+            outStream.reset()
+            outStream.close()
+
+            println("正式版的md5:" + getFileMD5(newMmDex))
+
+        }
+    }
+
+}
+
+
+task jiSuanSrc(dependsOn: ['addSo'], type: Exec) {
+    def dexPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}newMM.xml"
+    def srcEncryptionJarPath = projectDir.absolutePath + "${File.separator}bin${File.separator}JiSuanSrc.jar"
+    def cpdePath = projectDir.getParent() + "${File.separator}mm${File.separator}src${File.separator}main${File.separator}java${File.separator}com${File.separator}tencent${File.separator}mm${File.separator}core${File.separator}base${File.separator}Constanct.java"
+    if (isWindows()) {
+        def cmd = "java -jar " + srcEncryptionJarPath + " " + dexPath + " " + cpdePath
+        println(cmd)
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def cmd = ["java", "-jar", srcEncryptionJarPath, dexPath, cpdePath]
+        println(cmd)
+        commandLine cmd
+    }
+
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+/**
+ * 创建目录
+ */
+// todo 注意这个参数是sd卡路径
+def phonePath = "/sdcard/docker/Android/data/com.tencent.mm/cache/"
+// 删除文件夹
+task deleteDir(dependsOn: ['jiSuanSrc'], type: Exec) {
+    try {
+        if (isWindows()) {
+            def cmd = "adb shell rm -rf " + phonePath
+            println(cmd)
+            commandLine 'cmd', '/c', cmd
+        } else {
+            def cmd = ["adb", "shell", "rm", "-rf", phonePath]
+            println(cmd)
+            commandLine cmd
+        }
+        standardOutput = new ByteArrayOutputStream()
+        ext.output = {
+            return standardOutput.toString()
+        }
+    } catch (e) {
+
+    }
+}
+
+task makeDir(dependsOn: ['deleteDir'], type: Exec) {
+    try {
+        if (isWindows()) {
+            def cmd = "adb shell mkdir -p " + phonePath
+            println(cmd)
+            commandLine 'cmd', '/c', cmd
+        } else {
+            def cmd = ["adb", "shell", "mkdir", "-p", phonePath]
+            println(cmd)
+            commandLine cmd
+        }
+        standardOutput = new ByteArrayOutputStream()
+        ext.output = {
+            return standardOutput.toString()
+        }
+    } catch (e) {
+
+    }
+}
+
+/**
+ * push调试文件
+ */
+task inputTestMM(dependsOn: ['makeDir'], type: Exec) {
+    def mmPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}newTestMM.xml"
+    if (isWindows()) {
+        def cmd = "adb push " + mmPath + " " + phonePath + "/mm.xml"
+        println(cmd)
+        commandLine 'cmd', '/c', cmd
+    } else {
+        def cmd = ["adb", "push", mmPath, phonePath + "/mm.xml"]
+        commandLine cmd
+    }
+
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
+    }
+}
+
+// todo 单纯的只是导入
+task TestDeleteDir(type: Exec) {
+    try {
+        if (isWindows()) {
+            def cmd = "adb shell rm -rf " + phonePath
+            println(cmd)
+            commandLine 'cmd', '/c', cmd
+        } else {
+            def cmd = ["adb", "shell", "rm", "-rf", phonePath]
+            println(cmd)
+            commandLine cmd
+        }
+        standardOutput = new ByteArrayOutputStream()
+        ext.output = {
+            return standardOutput.toString()
+        }
+    } catch (e) {
+
+    }
+}
+
+task TestMakeDir(dependsOn: ['TestDeleteDir'], type: Exec) {
+    try {
+        if (isWindows()) {
+            def cmd = "adb shell mkdir -p " + phonePath
+            println(cmd)
+            commandLine 'cmd', '/c', cmd
+        } else {
+            def cmd = ["adb", "shell", "mkdir", "-p", phonePath]
+            println(cmd)
+            commandLine cmd
+        }
+        standardOutput = new ByteArrayOutputStream()
+        ext.output = {
+            return standardOutput.toString()
+        }
+    } catch (e) {
+
+    }
+}
+
+/**
+ * push调试文件
+ */
+task TestInputTestMM(dependsOn: ['TestMakeDir'], type: Exec) {
+    doLast {
+        def mmPath = project.buildDir.absolutePath + "${File.separator}libs${File.separator}newTestMM.xml"
+        if (isWindows()) {
+            def cmd = "adb push " + mmPath + " " + phonePath + "/mm.xml"
+            println(cmd)
+            commandLine 'cmd', '/c', cmd
+        } else {
+            def cmd = ["adb", "push", mmPath, phonePath + "/mm.xml"]
+            commandLine cmd
+        }
+
+        standardOutput = new ByteArrayOutputStream()
+        ext.output = {
+            return standardOutput.toString()
+        }
+    }
+
+}
+
+
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(':mm')
+}

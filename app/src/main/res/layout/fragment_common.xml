@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!--DragLayout要求所有子View的layout_gravity都居中显示-->
+
+    <com.wx.voice.view.transition.DragLayout
+        android:id="@+id/drag_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:bototmExtraIndicatorHeight="@dimen/card_extra_height"
+        app:bottomDragVisibleHeight="@dimen/card_bottom_info_height">
+
+        <!--1. 这个是底部的view-->
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_gravity="center_vertical"
+            android:alpha="0"
+            android:background="@drawable/white_back">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/card_bottom_info_height"
+                android:layout_gravity="bottom"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:paddingBottom="5dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="5dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/icon"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:scaleType="fitXY" />
+
+                    <TextView
+                        android:id="@+id/title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="10dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:paddingRight="10dp"
+                        android:text="花生日记"
+                        android:textColor="#333"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/bt_copy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="15dp"
+                        android:background="@drawable/promise_sell_btn_back"
+                        android:padding="5dp"
+                        android:text="复制邀请码"
+                        android:textColor="#FF0000"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tuijian"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="推荐指数"
+                        android:textColor="#333"
+                        android:textSize="15sp" />
+
+                    <RatingBar
+                        android:id="@+id/rating"
+                        style="?android:attr/ratingBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:numStars="5"
+                        android:rating="4.5" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginTop="10dp"
+                    android:background="#f0f0f0" />
+
+                <TextView
+                    android:id="@+id/desc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:ellipsize="end"
+                    android:lineSpacingExtra="6dp"
+                    android:maxLines="3"
+                    android:text="The federal beach atc requires states that receive funding to develop a risk-baseed beach evaluation and classification plan and apply it to the big environment..."
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!--2. 頂層可滑动的View-->
+
+        <com.wx.voice.view.transition.AspectRatioCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="@dimen/card_extra_height"
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="30dp"
+            app:cardCornerRadius="5dp"
+            app:cardElevation="6dp"
+            app:cardMaxElevation="6dp">
+
+            <ImageView
+                android:id="@+id/image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitXY"
+                android:src="@mipmap/test_icon" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:padding="5dp">
+
+                <TextView
+                    android:id="@+id/info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="戳戳看详情"
+                    android:textColor="#FF4081"
+                    android:textSize="15sp" />
+
+
+                <TextView
+                    android:id="@+id/downApp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:drawableTop="@mipmap/icon_down"
+                    android:text="下载应用"
+                    android:textColor="#FF4081"
+                    android:textSize="13sp" />
+
+            </RelativeLayout>
+
+        </com.wx.voice.view.transition.AspectRatioCardView>
+
+    </com.wx.voice.view.transition.DragLayout>
+
+</FrameLayout>

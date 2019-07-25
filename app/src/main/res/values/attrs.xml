@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- EmptyLayout start -->
+    <declare-styleable name="FrameEmptyLayout">
+        <attr name="error_image" format="reference" />
+        <attr name="error_text" format="string" />
+        <attr name="error_retry_text" format="string" />
+
+        <attr name="empty_image" format="reference" />
+        <attr name="empty_text" format="string" />
+    </declare-styleable>
+
+    <!--************ QMUILoading ***********-->
+    <declare-styleable name="LoadingView">
+        <attr name="loading_view_size" format="dimension" />
+        <attr name="android:color" />
+    </declare-styleable>
+    <attr name="LoadingStyle" format="reference" />
+
+    <declare-styleable name="app">
+        <attr name="bottomDragVisibleHeight" format="dimension" />
+        <attr name="bototmExtraIndicatorHeight" format="dimension" />
+    </declare-styleable>
+</resources>

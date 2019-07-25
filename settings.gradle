@@ -1,0 +1,1 @@
+include ':amr',':mm', ':jar',':app',':dialog_library',':jni'

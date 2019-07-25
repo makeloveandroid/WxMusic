@@ -1,0 +1,10 @@
+<resources>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_demo">DemoActivity</string>
+
+
+    <string name="aar_save">保存</string>
+    <string name="aar_paused">暂停</string>
+    <string name="aar_recording">录音</string>
+    <string name="aar_playing">播放</string>
+</resources>
